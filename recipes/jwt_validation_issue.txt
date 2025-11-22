@@ -1,0 +1,1 @@
+Always validate the signature, check token expiry, and avoid using insecure algorithms like none.

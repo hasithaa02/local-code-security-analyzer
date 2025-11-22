@@ -1,0 +1,1 @@
+Escape output, use safe DOM manipulation methods, and validate input. Prefer textContent over innerHTML.
