@@ -42,7 +42,9 @@ This guarantees that the evaluation environment can always run the project regar
 ---
 
 ## 2. Architecture
-<img width="960" height="609" alt="image" src="https://github.com/user-attachments/assets/fbb7d3fb-914b-441d-ba33-a3c3a658061b" />
+<img width="5592" height="712" alt="image" src="https://github.com/user-attachments/assets/b047c09a-457b-4c30-a45b-5436a0abcdc4" />
+
+
 
 
 ---
