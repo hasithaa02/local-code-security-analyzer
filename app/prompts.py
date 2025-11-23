@@ -1,5 +1,11 @@
-def build_prompt(language, cwe, code, context="") -> str:
-    return f"""You are a security code remediation assistant.
+from app.retriever import retrieve
+
+def build_prompt(language, cwe, code, context=""):
+    rag = retrieve(code)
+    rag_text = rag["content"] if rag else ""
+
+    return f"""
+You are a security code remediation assistant.
 
 ### CWE
 {cwe}
@@ -7,8 +13,11 @@ def build_prompt(language, cwe, code, context="") -> str:
 ### ORIGINAL CODE ({language})
 {code}
 
+### CONTEXT FROM SECURITY RECIPE
+{rag_text}
+
 ### TASK
-Provide a secure corrected version. Output strictly using:
+Provide a secure corrected version. Use:
 
 ### FIXED CODE
 <code>
