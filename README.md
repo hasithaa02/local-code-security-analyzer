@@ -55,7 +55,7 @@ This guarantees that the evaluation environment can always run the project regar
 <img width="5592" height="712" alt="image" src="https://github.com/user-attachments/assets/b047c09a-457b-4c30-a45b-5436a0abcdc4" />
 
 
-```mermaid
+```
 flowchart LR
 
     Client[Client Request] --> API[FastAPI /local_fix Endpoint]
