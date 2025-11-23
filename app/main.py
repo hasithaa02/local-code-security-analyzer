@@ -1,12 +1,11 @@
-import time
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from app.model_loader import run_model
+from app.model_loader import fix_code_with_model, is_model_available
 from app.prompts import build_prompt
-from app.utils import generate_diff, count_tokens
-from app.rag import retrieve_context
+from app.utils import generate_diff, count_tokens_estimate
+import time
 
-app = FastAPI(title="AI Code Remediation Microservice")
+app = FastAPI(title="Local Code Security Analyzer")
 
 class FixRequest(BaseModel):
     language: str
@@ -14,41 +13,29 @@ class FixRequest(BaseModel):
     code: str
 
 @app.post("/local_fix")
-def fix_code(data: FixRequest):
+def local_fix(req: FixRequest):
     start = time.time()
+    prompt = build_prompt(req.language, req.cwe, req.code)
+    input_tokens = count_tokens_estimate(prompt)
 
-    context = retrieve_context(data.cwe)
-    prompt = build_prompt(data.language, data.cwe, data.code, context)
-
-    input_tokens = count_tokens(prompt)
-    output = run_model(prompt)
-
-    # Best-effort parsing of expected sections
-    fixed_code = output
-    explanation = ""
     try:
-        if "### FIXED CODE" in output:
-            fixed_code = output.split("### FIXED CODE",1)[1]
-            if "### EXPLANATION" in fixed_code:
-                fixed_code, explanation = fixed_code.split("### EXPLANATION",1)
-                fixed_code = fixed_code.strip()
-                explanation = explanation.strip()
-    except Exception:
-        # keep defaults if parsing fails
-        pass
+        if is_model_available():
+            fixed, explanation = fix_code_with_model(prompt)
+        else:
+            fixed = "// REMOTE FALLBACK: Model not available locally\n" + req.code
+            explanation = "Local model unavailable. Returned safe fallback response."
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    diff = generate_diff(data.code, fixed_code)
-
-    latency = int((time.time() - start) * 1000)
+    output_tokens = count_tokens_estimate(fixed)
+    diff = generate_diff(req.code, fixed)
+    latency_ms = int((time.time() - start) * 1000)
 
     return {
-        "fixed_code": fixed_code,
+        "fixed_code": fixed,
         "diff": diff,
         "explanation": explanation,
-        "model_used": "Qwen2.5-Coder-1.5B",
-        "token_usage": {
-            "input_tokens": input_tokens,
-            "output_tokens": count_tokens(output)
-        },
-        "latency_ms": latency
+        "model_used": "local-gguf-or-remote-fallback",
+        "token_usage": {"input_tokens": input_tokens, "output_tokens": output_tokens},
+        "latency_ms": latency_ms
     }

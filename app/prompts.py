@@ -1,21 +1,18 @@
-def build_prompt(language, cwe, code, context):
-    return f"""You are a security code remediation AI.
+def build_prompt(language, cwe, code, context="") -> str:
+    return f"""You are a security code remediation assistant.
 
 ### CWE
 {cwe}
-
-### SECURITY CONTEXT
-{context}
 
 ### ORIGINAL CODE ({language})
 {code}
 
 ### TASK
-Fix the vulnerability, improve security, and return strictly in this format:
+Provide a secure corrected version. Output strictly using:
 
 ### FIXED CODE
-<secure code>
+<code>
 
 ### EXPLANATION
-<why the fix works + what vulnerability existed>
-""".format(language=language, cwe=cwe, code=code, context=context)
+<explanation>
+"""

@@ -1,7 +1,7 @@
-fastapi
-uvicorn
-transformers
-torch
-sentence-transformers
-faiss-cpu
-requests
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+requests>=2.28
+
+# Optional (for local GGUF model)
+# Install a prebuilt llama-cpp-python wheel for your Python version:
+# pip install https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.56/llama_cpp_python-0.2.56-cp310-cp310-win_amd64.whl
