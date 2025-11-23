@@ -1,6 +1,7 @@
 # Local Code Security Analyzer
 
-A lightweight FastAPI-based microservice that performs automated security-focused code remediation using a local LLM (GGUF/llama.cpp) with a remote-safe fallback. The system identifies insecure code, maps issues to CWE categories, generates secure patches, and returns explanations and diffs.
+A FastAPI-based microservice for automated, secure code remediation with optional local LLM inference (GGUF) and a robust deterministic fallback.
+
 
 This project demonstrates solid understanding of:
 - LLM orchestration
@@ -12,6 +13,15 @@ This project demonstrates solid understanding of:
 - Practical model-loading constraints on consumer hardware
 
 ---
+## 🔍 Features
+- Local GGUF LLM inference using llama.cpp
+- Deterministic no-crash fallback mode
+- CWE-driven vulnerability analysis
+- Secure patch generation
+- Git-style diff output
+- Latency + token estimation
+- Mini-RAG support through optional security recipes
+
 
 ## 1. Overview
 
@@ -45,7 +55,24 @@ This guarantees that the evaluation environment can always run the project regar
 <img width="5592" height="712" alt="image" src="https://github.com/user-attachments/assets/b047c09a-457b-4c30-a45b-5436a0abcdc4" />
 
 
+```mermaid
+flowchart LR
 
+    Client[Client Request] --> API[FastAPI /local_fix Endpoint]
+
+    API --> Prompt[Build Prompt<br>language + CWE + code + RAG]
+
+    Prompt --> Loader{Local GGUF<br>Model Available?}
+
+    Loader -->|Yes| GGUF[llama.cpp Inference<br>(GGUF Model)]
+    Loader -->|No| Fallback[Deterministic Fallback<br>(No model needed)]
+
+    GGUF --> Parser[Parse Fixed Code & Explanation]
+    Fallback --> Parser
+
+    Parser --> Diff[Generate Diff & Token Estimate]
+    Diff --> Response[Structured JSON Response]
+```
 
 ---
 
@@ -55,19 +82,27 @@ This guarantees that the evaluation environment can always run the project regar
 local-code-security-analyzer/
 │
 ├── app/
-│ ├── main.py # FastAPI routes
-│ ├── model_loader.py # GGUF loader + fallback logic
-│ ├── prompts.py # Prompt templates
-│ ├── utils.py # Diffing + token estimation
+│   ├── main.py              # FastAPI routes
+│   ├── model_loader.py      # GGUF loader + fallback logic
+│   ├── prompts.py           # Prompt builder + RAG integration
+│   ├── retriever.py         # Mini-RAG retriever (hash embeddings)
+│   ├── utils.py             # Diffing + token estimation
 │
-├── models/ # Place GGUF model here (optional)
+├── recipes/                 # Security recipe documents (RAG corpus)
+│   ├── sql_injection.txt
+│   ├── xss.txt
+│   ├── jwt_bypass.txt
 │
-├── recipes/ # Optional RAG security recipes
+├── tests/                   # Unit tests
+│   ├── test_api.py
+│   ├── test_retriever.py
+│   ├── test_loader.py
 │
-├── test_local.py
+├── test_local.py            # Assignment test script
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+
 ```
 
 ---
@@ -131,6 +166,17 @@ Sample Output
   "model_used": "local-gguf-or-fallback"
 }
 ```
+### Retrieval-Augmented Generation (Mini-RAG)
+
+The service includes a lightweight retriever:
+
+- Computes simple hash-based embeddings for recipe files
+
+- Finds the most relevant security recipe
+
+- Injects that text into the prompt before LLM inference
+
+- This increases patch accuracy while keeping the system fully CPU-friendly.
 
 ## 6. Model Selection and Challenges Faced
 
@@ -202,7 +248,8 @@ This approach demonstrates practical engineering decisions under real-world hard
 - Works **with or without** a local LLM model  
 - Offers fully **offline capability** when a GGUF model is available  
 - Provides a **stable, deterministic fallback** for environments where local inference fails  
-- Modular architecture: API, prompts, utilities, and model logic are independent  
+- Modular architecture: API, prompts, utilities, and model logic are independent
+- Mini-RAG improves context and remediation quality 
 - Easy to extend to cloud inference or larger models  
 - Security recipes can be expanded using RAG workflows  
 - Ensures robustness and predictable behavior across different systems  
@@ -214,8 +261,23 @@ This approach demonstrates practical engineering decisions under real-world hard
 - Add asynchronous inference queue for handling multiple requests  
 - Develop a minimal front-end interface for testing  
 - Integrate multiple code-fix model options  
-- Add an embedding-based RAG pipeline for contextual awareness  
+- More advanced embeddings for RAG 
 - Improve diff visualization output  
-- Provide a Docker configuration for consistent environment setup  
+- Provide a Docker configuration for consistent environment setup
+
+## 9. Unit Tests
+
+The repository includes:
+
+- API test
+
+- Retriever test
+
+- Loader behavior test
+
+Run with:
+```
+pytest -q
 
 
+```
